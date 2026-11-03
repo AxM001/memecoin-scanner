@@ -1,0 +1,28 @@
+name: Paper scanner
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/scan.yml']
+  schedule:
+    - cron: '2-57/5 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: paper-scanner
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: python3 scanner.py
+      - name: Save simulated trades
+        run: |
+          git add -- paper.sqlite
+          if ! git diff --cached --quiet; then
+            git -c user.name=paper-scanner -c user.email=paper-scanner@users.noreply.github.com commit -m "Save paper trades"
+            git push
+          fi
